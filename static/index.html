@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Guestbook &mdash; Emil Abraham</title>
+  <style>
+    body { max-width: 600px; margin: 40px auto; padding: 0 20px; }
+    textarea { width: 100%; box-sizing: border-box; }
+    #char-count { float: right; }
+    #status { margin-top: 1em; }
+  </style>
+</head>
+<body>
+
+  <p><a href="https://emilabraham.com">Home</a></p>
+  <hr>
+
+  <h1>Guestbook</h1>
+  <p>Leave a message. It'll print out on a receipt printer on my desk.</p>
+
+  <form id="guestbook-form">
+    <label for="message">Message</label><br>
+    <small id="char-count">0 / 10000</small>
+    <textarea id="message" name="message" rows="8" maxlength="10000" required></textarea>
+    <br>
+    <button type="submit">Send</button>
+  </form>
+
+  <p id="status"></p>
+
+  <hr>
+  <p><a href="https://github.com/emilabr">GitHub</a></p>
+
+  <script>
+    const textarea = document.getElementById('message');
+    const charCount = document.getElementById('char-count');
+    const status = document.getElementById('status');
+    const form = document.getElementById('guestbook-form');
+    const button = form.querySelector('button');
+
+    textarea.addEventListener('input', () => {
+      charCount.textContent = `${textarea.value.length} / 10000`;
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const message = textarea.value.trim();
+      if (!message) return;
+
+      button.disabled = true;
+      button.textContent = 'Sending...';
+      status.textContent = '';
+
+      try {
+        const res = await fetch('/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message }),
+        });
+
+        if (res.ok) {
+          status.textContent = 'Message sent! Check back to see if it made the gallery.';
+          textarea.value = '';
+          charCount.textContent = '0 / 10000';
+        } else {
+          const data = await res.json();
+          const detail = data.detail ?? 'Something went wrong. Please try again.';
+          if (res.status === 429) {
+            status.textContent = typeof detail === 'string' ? detail : 'Too many messages. Please wait before sending another.';
+          } else {
+            status.textContent = typeof detail === 'string' ? detail : 'Something went wrong. Please try again.';
+          }
+        }
+      } catch {
+        status.textContent = 'Could not reach the server. Please try again later.';
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Send';
+      }
+    });
+  </script>
+
+</body>
+</html>

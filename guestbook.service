@@ -1,0 +1,15 @@
+[Unit]
+Description=Guestbook API
+After=network.target printer-server.service
+
+[Service]
+Type=simple
+User=emil
+WorkingDirectory=/home/emil/guestbook
+ExecStart=/home/emil/guestbook/venv/bin/uvicorn app:app --host 127.0.0.1 --port 8766 --proxy-headers --forwarded-allow-ips=127.0.0.1
+Restart=on-failure
+RestartSec=5
+Environment=DAILY_LIMIT=30
+
+[Install]
+WantedBy=multi-user.target
