@@ -37,7 +37,8 @@ def init_db():
                 message       TEXT    NOT NULL,
                 submitted_at  TEXT    NOT NULL,
                 ip_hash       TEXT    NOT NULL,
-                gallery_approved INTEGER DEFAULT 0
+                gallery_approved INTEGER DEFAULT 0,
+                commentary    TEXT
             )
         """)
 
@@ -151,5 +152,18 @@ async def gallery():
             "WHERE gallery_approved = 1 ORDER BY submitted_at DESC"
         ).fetchall()
     return [{"id": r[0], "message": r[1], "submitted_at": r[2]} for r in rows]
+
+
+@app.get("/gallery/{message_id}")
+async def gallery_item(message_id: int):
+    with sqlite3.connect(DB_PATH) as conn:
+        row = conn.execute(
+            "SELECT id, message, submitted_at, commentary "
+            "FROM messages WHERE id = ? AND gallery_approved = 1",
+            (message_id,),
+        ).fetchone()
+    if row is None:
+        raise HTTPException(404, "Message not found")
+    return {"id": row[0], "message": row[1], "submitted_at": row[2], "commentary": row[3]}
 
 

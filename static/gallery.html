@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gallery &mdash; Emil Abraham</title>
+  <style>
+    body { max-width: 600px; margin: 40px auto; padding: 0 20px; }
+    pre { white-space: pre-wrap; word-break: break-word; }
+    #commentary { margin-top: 2em; border-top: 1px solid #ccc; padding-top: 1em; }
+  </style>
+</head>
+<body>
+
+  <p><a href="https://emilabraham.com">Home</a> / <a href="/gallery.html">Gallery</a></p>
+  <hr>
+
+  <div id="content"><p>Loading...</p></div>
+
+  <script>
+    function escHtml(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function firstLine(message, maxLen) {
+      const line = message.split('\n')[0];
+      return line.length > maxLen ? line.slice(0, maxLen) + '...' : line;
+    }
+
+    async function loadIndex() {
+      const el = document.getElementById('content');
+      try {
+        const res = await fetch('/gallery');
+        if (!res.ok) throw new Error();
+        const items = await res.json();
+        if (items.length === 0) {
+          el.innerHTML = '<h1>Gallery</h1><p>Nothing here yet.</p>';
+          return;
+        }
+        const links = items.map(item =>
+          `<li><a href="/gallery.html?id=${item.id}">${escHtml(firstLine(item.message, 80))}</a></li>`
+        ).join('\n');
+        el.innerHTML = `<h1>Gallery</h1><ul>${links}</ul>`;
+      } catch {
+        el.textContent = 'Could not load gallery.';
+      }
+    }
+
+    async function loadItem(id) {
+      const el = document.getElementById('content');
+      try {
+        const res = await fetch(`/gallery/${id}`);
+        if (res.status === 404) { el.textContent = 'Message not found.'; return; }
+        if (!res.ok) throw new Error();
+        const item = await res.json();
+        document.title = `${firstLine(item.message, 60)} — Gallery`;
+        let html = `<pre>${escHtml(item.message)}</pre>`;
+        if (item.commentary) {
+          html += `<div id="commentary"><p>${escHtml(item.commentary)}</p></div>`;
+        }
+        el.innerHTML = html;
+      } catch {
+        el.textContent = 'Could not load message.';
+      }
+    }
+
+    const id = new URLSearchParams(window.location.search).get('id');
+    if (id) {
+      loadItem(id);
+    } else {
+      document.title = 'Gallery — Emil Abraham';
+      loadIndex();
+    }
+  </script>
+
+</body>
+</html>
