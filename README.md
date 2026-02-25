@@ -23,11 +23,13 @@ Browser → guestbook.emilabraham.com (Apache) → this API (port 8766) → prin
 ```
 /home/emil/guestbook/
 ├── app.py                  # FastAPI backend (the API itself)
+├── approve.py              # CLI tool to approve messages for the gallery
 ├── guestbook.db            # SQLite database (auto-created on first run)
 ├── guestbook.service       # systemd service definition
 ├── guestbook-apache.conf   # Apache VirtualHost source config
 ├── static/
-│   └── index.html          # Frontend source (edit this, then run deploy.sh)
+│   ├── index.html          # Guestbook submission form
+│   └── gallery.html        # Gallery page (index + individual message views)
 ├── deploy.sh               # Copies static/ to /var/www/guestbook/
 ├── venv/                   # Python virtual environment with dependencies
 └── README.md               # This file
@@ -96,11 +98,28 @@ sudo certbot --apache -d guestbook.emilabraham.com
 
 ## Updating the Frontend
 
-Edit `static/index.html`, then deploy:
+Edit files in `static/`, then deploy:
 
 ```bash
 sudo ./deploy.sh
 ```
+
+## Gallery
+
+Approved messages appear at **https://guestbook.emilabraham.com/gallery.html**.
+
+- The index lists approved messages as links (link text = first line of message)
+- Each link goes to an individual page showing the full message in a code block, with optional commentary below
+
+### Approving messages
+
+Run the interactive CLI:
+
+```bash
+python3 /home/emil/guestbook/approve.py
+```
+
+It will list pending messages, let you select one by ID, prompt for optional commentary, and mark it as approved.
 
 ---
 
@@ -182,7 +201,10 @@ with urllib.request.urlopen(req) as r:
 ```
 
 ### `GET /gallery`
-Returns messages that have been approved for gallery display (none by default).
+Returns all gallery-approved messages as JSON.
+
+### `GET /gallery/{id}`
+Returns a single approved message by ID, including commentary. Returns `404` if not found or not approved.
 
 ---
 
