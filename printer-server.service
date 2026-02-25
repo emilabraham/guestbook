@@ -1,0 +1,12 @@
+[Unit]
+Description=Rongta RP326 Printer HTTP Server
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /home/emil/printer-server.py
+User=emil
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

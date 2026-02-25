@@ -41,7 +41,58 @@ Browser → guestbook.emilabraham.com (Apache) → this API (port 8766) → prin
 **Dependencies** (installed in `venv/`): `fastapi`, `uvicorn`, `slowapi`
 
 **Related services:**
-- `printer-server.service` — runs `~/printer-server.py` on port 8765. The guestbook API depends on this.
+- `printer-server.service` — runs `printer-server.py` on port 8765. The guestbook API depends on this.
+
+## Setup
+
+### 1. Printer Server
+
+The guestbook depends on `printer-server.py`, which must be running as a systemd service. To install it:
+
+```bash
+# Copy to home directory
+cp printer-server.py ~/printer-server.py
+
+# Install and start the service
+sudo cp printer-server.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable printer-server
+sudo systemctl start printer-server
+```
+
+The printer server listens on `127.0.0.1:8765` and writes to `/dev/usb/lp0`. Make sure the Rongta RP326 is connected via USB before starting.
+
+### 2. Guestbook API
+
+```bash
+# Create virtual environment and install dependencies
+python3 -m venv venv
+venv/bin/pip install fastapi uvicorn slowapi
+
+# Install and start the service
+sudo cp guestbook.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable guestbook
+sudo systemctl start guestbook
+```
+
+### 3. Apache
+
+```bash
+# Enable required modules
+sudo a2enmod proxy proxy_http ssl rewrite headers
+
+# Deploy frontend and enable site
+sudo mkdir -p /var/www/guestbook
+sudo ./deploy.sh
+sudo cp guestbook-apache.conf /etc/apache2/sites-available/guestbook.conf
+sudo a2ensite guestbook
+sudo systemctl reload apache2
+
+# Get SSL certificate (DNS must point to this machine first)
+sudo apt install -y certbot python3-certbot-apache
+sudo certbot --apache -d guestbook.emilabraham.com
+```
 
 ## Updating the Frontend
 
